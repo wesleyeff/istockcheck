@@ -3,21 +3,25 @@ const nodemailer = require('nodemailer');
 const schedule = require('node-schedule');
 const config = require('./config');
 
-const emailSender = config.email.from;
-const emailSendTo = config.email.to;
-
 let localStores = config.stores
-
 let success;
 
 // create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport(config.email.smtp);
 
-const j = schedule.scheduleJob('* * * * *', () => {
+verifyNodeMailer();
+
+// Set up Schedulers
+const verify = schedule.scheduleJob('0 * * * *', () => {
+  verifyNodeMailer()
+})
+
+const check = schedule.scheduleJob('* * * * *', () => {
   queryISTockNow();
   console.log('querying istocknow');
 });
 
+// functions
 function queryISTockNow() {
   success = {};
   const options = {
@@ -45,7 +49,7 @@ function queryISTockNow() {
       const mailOptions = {
           from: config.email.from, // sender address
           to: config.email.to, // list of receivers
-          subject: 'AirPods in stock ✔', // Subject line
+          subject: `AirPods in stock ✔ at ${now()}`, // Subject line
           text: JSON.stringify(success), // plaintext body
           // html: '<b>Hello world 🐴</b>' // html body
       };
@@ -58,7 +62,21 @@ function queryISTockNow() {
           console.log('Message sent: ' + info.response);
       });
     } else {
-      console.log( 'no airpods available' );
+      console.log( `no airpods available at ${now()}` );
     }
   })
+}
+
+function verifyNodeMailer() {
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(`Server is ready to take our messages, ${now()}`);
+    }
+  });
+}
+
+function now() {
+  return new Date().toLocaleTimeString();
 }
