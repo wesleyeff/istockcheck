@@ -11,7 +11,7 @@ let localStores = config.stores
 let success;
 
 // create reusable transporter object using the default SMTP transport
-var transporter = nodemailer.createTransport(config.email.smtp);
+const transporter = nodemailer.createTransport(config.email.smtp);
 
 const j = schedule.scheduleJob('* * * * *', () => {
   queryISTockNow();
@@ -42,7 +42,7 @@ function queryISTockNow() {
     if(Object.keys(success).length > 0) {
       console.log( 'were good' );
       // setup e-mail data with unicode symbols
-      var mailOptions = {
+      const mailOptions = {
           from: config.email.from, // sender address
           to: config.email.to, // list of receivers
           subject: 'AirPods in stock ✔', // Subject line
