@@ -2,12 +2,14 @@ const request = require('request');
 const nodemailer = require('nodemailer');
 const schedule = require('node-schedule');
 const config = require('./config');
+const _ = require('lodash');
 
 let localStores = config.stores
 let success;
 
 // create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport(config.email.smtp);
+const airPodUrl = `http://www.apple.com/us/shop/go/product/MMEF2`;
 
 verifyNodeMailer();
 
@@ -23,43 +25,50 @@ const check = schedule.scheduleJob('* * * * *', () => {
 
 // functions
 function queryISTockNow() {
-  success = {};
-  const options = {
+  success = [];
+  const requestOptions = {
     method: 'GET',
     url: config.iStockUrl,
     json: true,
   }
-  return request(options, (error, response, body) => {
+  return request(requestOptions, (error, response, body) => {
     if (error) {
       return console.error(error)
     }
     let stores = body.dataz || {};
     Object.keys(stores).forEach((store) => {
-      if (Object.keys(localStores).includes(store) && stores[store].live === 1) {
-        let name = localStores[store];
-        success[name] = true;
+      localStores.forEach(localStore => {
+        if (localStore.id === store && stores[store].live === 1) {
+          localStore.website = airPodUrl;
+          success.push(localStore);
         console.log( 'stores[store]:', stores[store] );
       }
+      })
     })
 
-    console.log( 'available stores', Object.keys(success) );
-    if(Object.keys(success).length > 0) {
-      console.log( 'were good' );
+    let b = _.chain(success)
+      .groupBy('email')
+      .value();
+
+    if(Object.keys(b)) {
+      Object.keys(b).forEach(email => {
+        console.log('email', email)
       // setup e-mail data with unicode symbols
-      const mailOptions = {
+        const mailrequestOptions = {
           from: config.email.from, // sender address
-          to: config.email.to, // list of receivers
+          to: email, // list of receivers
           subject: `AirPods in stock ✔ at ${now()}`, // Subject line
-          text: JSON.stringify(success), // plaintext body
+          text: JSON.stringify(b[email]), // plaintext body
           // html: '<b>Hello world 🐴</b>' // html body
       };
 
       // send mail with defined transport object
-      transporter.sendMail(mailOptions, (error, info) => {
+        transporter.sendMail(mailrequestOptions, (error, info) => {
           if(error){
               return console.log(error);
           }
           console.log('Message sent: ' + info.response);
+        });
       });
     } else {
       console.log( `no airpods available at ${now()}` );
