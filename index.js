@@ -50,7 +50,7 @@ function queryISTockNow() {
       .groupBy('email')
       .value();
 
-    if(Object.keys(b)) {
+    if(Object.keys(b).length > 0) {
       Object.keys(b).forEach(email => {
         console.log('email', email)
       // setup e-mail data with unicode symbols
