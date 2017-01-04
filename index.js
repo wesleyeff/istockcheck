@@ -35,6 +35,9 @@ function queryISTockNow() {
     if (error) {
       return console.error(error)
     }
+    if (!body) {
+      return;
+    }
     let stores = body.dataz || {};
     Object.keys(stores).forEach((store) => {
       localStores.forEach(localStore => {
